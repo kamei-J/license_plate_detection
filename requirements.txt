@@ -1,0 +1,15 @@
+ultralytics==8.3.94
+roboflow==1.1.58
+opencv-python-headless==4.10.0.84
+Pillow==11.1.0
+numpy==2.0.2
+torch==2.6.0+cu124
+matplotlib==3.10.0
+tqdm==4.67.1
+PyYAML==6.0.2
+requests==2.32.3
+urllib3==2.3.0
+filetype==1.2.0
+python-dotenv==1.0.1
+idna==3.7
+pillow-heif==0.22.0
