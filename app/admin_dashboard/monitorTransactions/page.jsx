@@ -8,28 +8,32 @@ export default function TollPage() {
   const [user, setUser] = useState(null);
   const [tollTax, setTollTax] = useState(0);
   const [error, setError] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Display the uploaded image
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImage(e.target.result);
-    };
-    reader.readAsDataURL(file);
+    setIsProcessing(true);
+    setError("");
 
-    // Extract license plate number from the image (mock function)
-    const extractedLicensePlate = await extractLicensePlate(file);
-    setLicensePlateNo(extractedLicensePlate);
-
-    // Fetch user details and toll tax
     try {
+      // Display the uploaded image
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImage(e.target.result);
+      };
+      reader.readAsDataURL(file);
+
+      // Step 1: Send image to FastAPI for license plate recognition
+      const plateData = await recognizeLicensePlate(file);
+      setLicensePlateNo(plateData.license_plate);
+
+      // Step 2: Fetch user details and toll tax from your Next.js API
       const res = await fetch("/api/admin/toll", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ licensePlateNo: extractedLicensePlate }),
+        body: JSON.stringify({ licensePlateNo: plateData.license_plate }),
       });
 
       if (!res.ok) {
@@ -39,17 +43,43 @@ export default function TollPage() {
       const data = await res.json();
       setUser(data.user);
       setTollTax(data.tollTax);
-      // console.log(data.tollTax);
     } catch (error) {
-      console.error("Error fetching user details:", error);
-      setError("An error occurred while fetching user details");
+      console.error("Error:", error);
+      setError(error.message || "An error occurred during processing");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  // Mock function to extract license plate number
-  const extractLicensePlate = async (file) => {
-    // Replace this with actual OCR logic (e.g., Google Cloud Vision API or Tesseract.js)
-    return "NL34JK9802"; // Mock license plate number
+  // Function to call FastAPI for license plate recognition
+  const recognizeLicensePlate = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      // Replace with your FastAPI endpoint
+      const response = await fetch("http://127.0.0.1:8000/process-image", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("License plate recognition failed");
+      }
+
+      const data = await response.json();
+      
+      // Assuming your FastAPI returns:
+      // { license_plate: "ABC123", confidence: 0.95 }
+      if (!data.license_plate) {
+        throw new Error("No license plate detected");
+      }
+
+      return data;
+    } catch (error) {
+      console.error("Recognition error:", error);
+      throw new Error("Could not process the image");
+    }
   };
 
   return (
@@ -70,15 +100,19 @@ export default function TollPage() {
               type="file"
               accept="image/*"
               onChange={handleImageUpload}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              disabled={isProcessing}
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
             />
+            {isProcessing && (
+              <p className="mt-2 text-blue-600">Processing image...</p>
+            )}
           </div>
 
           {/* License Plate Number */}
           {licensePlateNo && (
             <div className="mb-8">
               <p className="text-lg font-medium text-gray-700">
-                License Plate No:{" "}
+                Detected License Plate:{" "}
                 <span className="font-bold text-blue-600">{licensePlateNo}</span>
               </p>
             </div>
@@ -126,7 +160,7 @@ export default function TollPage() {
           <div className="flex-1 flex items-center justify-center">
             <div className="bg-gray-50 p-6 rounded-lg shadow-sm w-full max-w-md">
               <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
-                Uploaded Image
+                Vehicle Image
               </h2>
               <div className="aspect-w-16 aspect-h-9">
                 <img
