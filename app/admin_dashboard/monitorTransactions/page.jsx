@@ -9,6 +9,8 @@ export default function TollPage() {
   const [tollTax, setTollTax] = useState(0);
   const [error, setError] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  // const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  // const [shareLink, setShareLink] = useState("");
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -44,20 +46,18 @@ export default function TollPage() {
       setUser(data.user);
       setTollTax(data.tollTax);
     } catch (error) {
-      console.error("Error:", error);
+      // console.error("Error:", error);
       setError(error.message || "An error occurred during processing");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  // Function to call FastAPI for license plate recognition
   const recognizeLicensePlate = async (file) => {
     const formData = new FormData();
     formData.append("file", file);
 
     try {
-      // Replace with your FastAPI endpoint
       const response = await fetch("http://127.0.0.1:8000/process-image", {
         method: "POST",
         body: formData,
@@ -69,8 +69,6 @@ export default function TollPage() {
 
       const data = await response.json();
       
-      // Assuming your FastAPI returns:
-      // { license_plate: "ABC123", confidence: 0.95 }
       if (!data.license_plate) {
         throw new Error("No license plate detected");
       }
@@ -79,6 +77,35 @@ export default function TollPage() {
     } catch (error) {
       console.error("Recognition error:", error);
       throw new Error("Could not process the image");
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      // Generate a unique shareable link (you might want to implement this in your backend)
+      const res = await fetch("/api/admin/share_toll", {
+        method: "POST", 
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          licensePlateNo, 
+          tollTax,
+          userId: user?._id
+        }),
+      });
+      console.log(res);
+
+      if (!res.ok) throw new Error("Failed to generate share link");
+
+      const data = await res.json();
+      // setShareLink(data.shareLink);
+      // setIsShareModalOpen(true);
+      
+      // Copy to clipboard
+      // await navigator.clipboard.writeText(data.shareLink);
+      alert("Toll tax shared to user successfully!");
+    } catch (error) {
+      console.error("Error sharing:", error);
+      setError("Failed to generate share link");
     }
   };
 
@@ -144,6 +171,14 @@ export default function TollPage() {
                   <span className="font-bold text-green-600">${tollTax}</span>
                 </p>
               </div>
+              
+              {/* Share Button - Only shown when user details are displayed */}
+              <button
+                onClick={handleShare}
+                className="mt-4 bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
+              >
+                Share toll tax 
+              </button>
             </div>
           )}
 
@@ -173,6 +208,36 @@ export default function TollPage() {
           </div>
         )}
       </div>
+
+      {/* Share Modal */}
+      {/* {isShareModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h2 className="text-xl font-bold mb-4">Share Details</h2>
+            <p className="mb-4">Share this link with others:</p>
+            <div className="flex items-center mb-4">
+              <input
+                type="text"
+                value={shareLink}
+                readOnly
+                className="flex-1 p-2 border rounded-l"
+              />
+              <button
+                onClick={() => navigator.clipboard.writeText(shareLink)}
+                className="bg-blue-500 text-white p-2 rounded-r"
+              >
+                Copy
+              </button>
+            </div>
+            <button
+              onClick={() => setIsShareModalOpen(false)}
+              className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )} */}
     </div>
   );
 }

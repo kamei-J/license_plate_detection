@@ -119,7 +119,7 @@ export default function Dashboard() {
               <tbody>
                 {transactions.map((transaction) => (
                   <tr key={transaction._id} className="border-b">
-                    <td className="p-2">{transaction.transactionId}</td>
+                    <td className="p-2">{transaction._id}</td>
                     <td className="p-2">${transaction.amount.toFixed(2)}</td>
                     <td className="p-2">
                       {new Date(transaction.date).toLocaleDateString()}
