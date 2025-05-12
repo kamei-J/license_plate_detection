@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation"; // Import useRouter
 
 export default function UserDashboard() {
   const [tollTax, setTollTax] = useState(0);
   const [isPaid, setIsPaid] = useState(false);
   const [transactions, setTransactions] = useState([]);
+  const router = useRouter(); // Initialize useRouter
 
   const fetchTollTax = async () => {
     try {
@@ -18,11 +20,6 @@ export default function UserDashboard() {
       }
 
       const data = await res.json();
-      // console.log(data);
-      // setTollTax(data.amount);
-      // setIsPaid(data.status==='completed');
-      // setTollTax(0);
-      // setIsPaid(false);
       setTransactions(data);
     } catch (error) {
       console.error("Error fetching toll tax:", error);
@@ -30,8 +27,6 @@ export default function UserDashboard() {
   };
 
   useEffect(() => {
-    // Fetch toll tax for the logged-in user
-
     fetchTollTax();
   }, []);
 
@@ -53,7 +48,10 @@ export default function UserDashboard() {
 
       setIsPaid(true);
       fetchTollTax();
-      alert("Payment successful!");
+      // alert("Payment successful!");
+
+      // Redirect to a success page
+      router.push(`/users_dashboard/payment-success?txnId=${txn._id}&amt=${txn.amount}`);
     } catch (error) {
       console.error("Error processing payment:", error);
       alert("Payment failed. Please try again.");
@@ -64,24 +62,6 @@ export default function UserDashboard() {
     <div className="flex flex-col items-center justify-center p-24">
       <h1 className="text-4xl font-bold mb-8">Calculated Tax</h1>
 
-      {/* <div className="w-full max-w-md">
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold mb-4">Toll Tax</h2>
-          <p>
-            Amount to be Paid: <strong>Rs.{tollTax}</strong>
-          </p>
-          {isPaid ? (
-            <p className="text-green-500 mt-4">Payment Completed</p>
-          ) : (
-            <button
-              onClick={handlePayment}
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4"
-            >
-              Pay Now
-            </button>
-          )}
-        </div>
-      </div> */}
       <div className="w-full max-w-5xl mt-8">
         <h2 className="text-2xl font-bold mb-4">Recent Pending Transactions</h2>
         <div className="bg-white p-6 rounded-lg shadow-md">
